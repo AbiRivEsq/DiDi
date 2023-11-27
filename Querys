@@ -1,0 +1,93 @@
+/*Exercise 1*/
+
+select
+id,
+visits / holidays_nbr as visitors_holidays_avg
+from
+(select
+id,
+holidays_nbr,
+sum(reserve_visitors) as visits
+from
+(select 
+id,
+case when visit_datetime is null then calendar_date else visit_datetime end as visit_datetime,
+case when reserve_visitors is null then 0 else reserve_visitors end as reserve_visitors,
+holiday_flg,
+(select sum(holiday_flg) as holidays_nbr from ddi.date_info) as holidays_nbr
+from
+ddi.restaurants_visitors a
+right join
+ddi.date_info b
+on a.visit_datetime = b.calendar_date) c
+where holiday_flg = 1
+group by 1, 2) d
+order by visitors_holidays_avg desc
+limit 5
+
+
+
+/*Exercise 2*/
+
+select
+day_of_week,
+reserve_visitors / total_days as visitors_avg
+from
+(select
+day_of_week,
+sum(reserve_visitors) as reserve_visitors,
+count(visit_datetime) as total_days
+from
+(select
+day_of_week,
+visit_datetime,
+sum(reserve_visitors) as reserve_visitors
+from
+(select 
+id,
+case when visit_datetime is null then calendar_date else visit_datetime end as visit_datetime,
+case when reserve_visitors is null then 0 else reserve_visitors end as reserve_visitors,
+day_of_week
+from
+ddi.restaurants_visitors a
+right join
+ddi.date_info b
+on a.visit_datetime = b.calendar_date) c
+group by 1,2) d
+group by 1) e
+
+/*Exercise 3*/
+
+
+select
+week_,
+sum(reserve_visitors) as reserve_visitors
+from
+(select
+*,
+ceil(ROW_NUMBER() OVER(ORDER BY visit_datetime_ asc)/7) as week_
+from
+(select
+visit_datetime_,
+sum(reserve_visitors) as reserve_visitors
+from
+(select 
+id,
+case when visit_datetime is null then calendar_date else visit_datetime end as visit_datetime_,
+case when reserve_visitors is null then 0 else reserve_visitors end as reserve_visitors
+from
+ddi.restaurants_visitors a
+right join
+ddi.date_info b
+on a.visit_datetime = b.calendar_date
+) c
+group by 1
+) d
+order by visit_datetime_ desc
+) e
+group by 1
+order by week_ desc
+limit 4
+
+
+
